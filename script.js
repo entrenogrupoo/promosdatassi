@@ -31,3 +31,28 @@ const checkOffer=()=>{const extent=document.documentElement.scrollHeight-innerHe
 window.addEventListener('scroll',checkOffer,{passive:true});
 document.getElementById('close-offer').onclick=()=>offerDialog.close();
 offerDialog.addEventListener('click',e=>{if(e.target===offerDialog){const r=offerDialog.getBoundingClientRect();if(e.clientX<r.left||e.clientX>r.right||e.clientY<r.top||e.clientY>r.bottom)offerDialog.close();}});
+
+// Indicador ilustrativo: muda a cada nova visita/recarregamento, sem simular dados reais.
+// sessionStorage evita repetir o mesmo valor consecutivamente na mesma aba.
+const capacityBar = document.querySelector('.capacity-track');
+let previousCapacity = null;
+try { previousCapacity = Number(sessionStorage.getItem('tassi_last_capacity')); } catch (_) {}
+let currentCapacity = null;
+function refreshCapacity() {
+  const candidates = Array.from({length: 9}, (_, i) => i + 91)
+    .filter(n => n !== previousCapacity && n !== currentCapacity);
+  const rand = new Uint32Array(1);
+  if (window.crypto && crypto.getRandomValues) crypto.getRandomValues(rand);
+  else rand[0] = Math.floor(Math.random() * 4294967296);
+  const pct = candidates[rand[0] % candidates.length];
+  currentCapacity = pct;
+  previousCapacity = pct;
+  try { sessionStorage.setItem('tassi_last_capacity', String(pct)); } catch (_) {}
+  document.getElementById('capacity-percent').textContent = `${pct}%`;
+  document.getElementById('capacity-left').textContent = String(100 - pct);
+  document.getElementById('capacity-fill').style.width = `${pct}%`;
+  capacityBar.setAttribute('aria-valuenow', String(pct));
+}
+refreshCapacity();
+// Quando a página volta do cache de navegação (botão Voltar), renova também.
+window.addEventListener('pageshow', event => { if (event.persisted) refreshCapacity(); });
